@@ -1,11 +1,12 @@
 var http = (function() {
-  var request = function(method, url, data) {
+  var request = function(method, url, token, data) {
     return new Promise(function(resolve, reject) {
       var sendingData = (data !== void 0);
 
       var r = new XMLHttpRequest();
       r.open(method, url);
       r.setRequestHeader('Accept', 'application/json');
+      r.setRequestHeader('Authorization', 'Bearer ' + token);
       if (sendingData) {
         r.setRequestHeader('Content-Type', 'application/json');
       }
@@ -31,8 +32,8 @@ var http = (function() {
   };
 
   return {
-    get: function(url) {
-      return request('GET', url);
+    get: function(url, token) {
+      return request('GET', url, token);
     }
   };
 })();

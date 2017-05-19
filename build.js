@@ -107,7 +107,7 @@ var Job = function(values, observable) {
           if (oldColour == "blue_anime")
             return "successful";
 
-          return "fixed"; 
+          return "fixed";
         }
 
         if (newColour == "red") {
@@ -126,10 +126,10 @@ var Job = function(values, observable) {
 
         return "noChange";
       }(_values.colour, values.colour);
-      
+
       _values = values;
       view.refresh(this);
-      
+
       observable.fire('job_' + transition);
     }
   };
@@ -176,16 +176,40 @@ var Jobs = function(el, baseUrl, ignore) {
   this.on = observable.on.bind(observable);
 
   this.poll = function() {
-    var url = _baseUrl + "/api/json?tree=jobs[name,color,lastBuild[number,builtOn,duration,estimatedDuration,timestamp,result]]";
+    var url = "https://ci.appveyor.com/api/projects";
+    //var url = _baseUrl + "/api/json?tree=jobs[name,color,lastBuild[number,builtOn,duration,estimatedDuration,timestamp,result]]";
 
-    http.get(url).then(function(data) {
+    http.get(url, _baseUrl).then(function(data) {
+      console.log(data);
+      for (let i = 0; i < data.length; i++) {
+        switch (data[i].builds[0].status) {
+          case 'success':
+            data[i].color = 'green';
+            break;
+          case 'queued':
+            data[i].color = 'blue';
+            break;
+          case 'running':
+            data[i].color = 'yellow_anime';
+            break;
+          default:
+            data[i].color = 'red';
+        }
+        data[i].lastBuild = data[i].builds[0];
+        data[i].lastBuild.number = data[i].lastBuild.buildNumber;
+        data[i].lastBuild.builtOn = data[i].lastBuild.started;
+        data[i].lastBuild.timestamp = moment(data[i].lastBuild.builtOn).unix() * 1000;
+        data[i].lastBuild.duration = 0;
+        data[i].lastBuild.estimatedDuration = 30;
+        data[i].lastBuild.result = 1;
+      }
       observable.fire('connected');
-      observable.fire('update', data); 
+      observable.fire('update', { jobs: data });
     }).catch(function(error) {
       observable.fire('disconnected', error);
     });
   };
-  
+
   this.color = function() {
     var verbs = {};
     for (var job in _jobs) {
@@ -199,7 +223,7 @@ var Jobs = function(el, baseUrl, ignore) {
     if (verbs['started'] > 0) return 'anime';
     return 'green';
   };
-  
+
   this.reset = function () {
     lastColor = null;
   }
@@ -210,7 +234,7 @@ var Jobs = function(el, baseUrl, ignore) {
 var bonusRound = {
   cat: function(jobs) {
     jobs.on('green', function() {
-      imageShow("http://thecatapi.com/api/images/get.php?format=src&amp;type=gif&t=" + new Date().getTime());
+      imageShow("http://thecatapi.com/api/images/get?format=src&type=gif");
     }).on('anime', 'red', function() {
       imageHide();
     });
@@ -239,11 +263,11 @@ var bonusRound = {
     }).on('anime', 'red', function() {
       $('#box').hide();
     });
-  },  
-  eightbit: function(jobs) {    
+  },
+  eightbit: function(jobs) {
 	$('body').prepend('<div id="box"></div>');
     var box = $('#box').hide();
-	
+
     jobs.on('green', function() {
       $('#box').show();
       $('#box').html('<iframe width="' + $(window).width() + '" height="' + $(window).height() + '" src="8bit.html?sound=0" style="border: 0;"/>');
@@ -258,11 +282,11 @@ var audioList = {
   classic: function(jobs) {
     var play = function(path) {
       var _audio;
-      return function() { 
+      return function() {
         if (_audio === void 0) {
           _audio = new Audio(path);
         }
-        _audio.play(); 
+        _audio.play();
       }
     }
 
@@ -299,7 +323,7 @@ var start = (function() {
     if (scope == "contains") {
       return name.indexOf(filter) !== -1;
     }
-    
+
     return name.indexOf(filter) !== -1;
   };
 
@@ -325,7 +349,7 @@ var start = (function() {
     audioList[audioName](jobs);
   }
 
-  $(document).on('click', function() { 
+  $(document).on('click', function() {
     jobs.reset();
     jobs.poll();
   });
