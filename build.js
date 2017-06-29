@@ -182,8 +182,8 @@ var Jobs = function(el, baseUrl, ignore) {
     http.get(url, _baseUrl).then(function(data) {
       console.log(data);
       for (let i = 0; i < data.length; i++) {
-	if (!data[i].builds[0]) continue;
-        switch (data[i].builds[0].status) {
+        data[i].lastBuild = data[i].builds[0] || { status: 'green' };
+        switch (data[i].lastBuild.status) {
           case 'success':
             data[i].color = 'green';
             break;
@@ -196,7 +196,6 @@ var Jobs = function(el, baseUrl, ignore) {
           default:
             data[i].color = 'red';
         }
-        data[i].lastBuild = data[i].builds[0];
         data[i].lastBuild.number = data[i].lastBuild.buildNumber;
         data[i].lastBuild.builtOn = data[i].lastBuild.started;
         data[i].lastBuild.timestamp = moment(data[i].lastBuild.builtOn).unix() * 1000;
