@@ -182,6 +182,7 @@ var Jobs = function(el, baseUrl, ignore) {
     http.get(url, _baseUrl).then(function(data) {
       console.log(data);
       for (let i = 0; i < data.length; i++) {
+	if (!data[i].builds[0]) continue;
         switch (data[i].builds[0].status) {
           case 'success':
             data[i].color = 'green';
